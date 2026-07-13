@@ -1,24 +1,29 @@
 const CACHE_NAME = 'salah-timings-v9';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-];
 
-// Install the Service Worker and cache the core files
+// The "Force-Update" Strategy
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
+    self.skipWaiting();
 });
 
-// Intercept network requests and load from cache if offline
+self.addEventListener('activate', (e) => {
+    e.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cache) => {
+                    if (cache !== CACHE_NAME) {
+                        return caches.delete(cache);
+                    }
+                })
+            );
+        })
+    );
+});
+
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
-  );
+    // Network First strategy: Always try the internet first
+    e.respondWith(
+        fetch(e.request).catch(() => {
+            return caches.match(e.request);
+        })
+    );
 });
