@@ -7,42 +7,130 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#134e4a">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2972/2972531.png">
+
     <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #134e4a 0%, #064e3b 50%, #022c22 100%); }
-        .glass-card { background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .active-prayer-glow { background: rgba(6, 78, 59, 0.6) !important; border: 1px solid rgba(34, 211, 238, 0.8) !important; animation: pulse 3s infinite; }
-        @keyframes pulse { 0%, 100% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.4); } 50% { box-shadow: 0 0 30px rgba(52, 211, 153, 0.5); } }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #134e4a 0%, #064e3b 50%, #022c22 100%);
+        }
+        /* iOS Frosted Liquid Glass Base Layout */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* High-Contrast Vibrant Active Glow Engine */
+        .active-prayer-glow {
+            background: rgba(6, 78, 59, 0.6) !important;
+            border: 1px solid rgba(34, 211, 238, 0.8) !important;
+            box-shadow: 0 0 25px rgba(34, 211, 238, 0.4), inset 0 0 12px rgba(34, 211, 238, 0.2);
+            transform: scale(1.025);
+            animation: pulseGlowBorder 3s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlowBorder {
+            0%, 100% { border-color: rgba(34, 211, 238, 0.8); box-shadow: 0 0 25px rgba(34, 211, 238, 0.4); }
+            50% { border-color: rgba(52, 211, 153, 0.9); box-shadow: 0 0 30px rgba(52, 211, 153, 0.5); }
+        }
+
+        /* Dropdown Scrollbar Hide */
+        #search-results::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 <body class="text-white min-h-screen flex flex-col justify-between p-4">
 
     <div class="max-w-md mx-auto w-full pt-4 pb-12">
+        
         <div class="relative mb-4 z-50">
             <div class="glass-card rounded-xl p-2 flex items-center gap-2 border border-white/10">
                 <span class="material-icons-round text-emerald-400 pl-2">search</span>
-                <input type="text" id="city-search-input" placeholder="Search Indian city..." class="bg-transparent text-sm text-white focus:outline-none w-full" />
+                <input type="text" id="city-search-input" placeholder="Search any Indian city..." autocomplete="off"
+                       class="bg-transparent text-sm text-white placeholder-gray-400 focus:outline-none w-full font-medium" />
+                <span id="search-spinner" class="material-icons-round text-emerald-400 animate-spin hidden text-sm pr-2">sync</span>
             </div>
-            <ul id="search-results" class="absolute w-full mt-1 glass-card rounded-xl hidden max-h-48 overflow-y-auto"></ul>
+            
+            <ul id="search-results" class="absolute w-full mt-1 glass-card rounded-xl max-h-48 overflow-y-auto hidden divide-y divide-white/5 border border-white/10 shadow-2xl">
+                </ul>
         </div>
 
-        <header class="text-center mb-6">
-            <h1 class="text-4xl font-extrabold tracking-tight pb-2 flex items-center justify-center gap-2">
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-100 to-cyan-200">Salah Timings</span>
-                <img src="https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg" alt="India Flag" class="w-8 h-8 rounded-full border border-white/20">
+        <header class="text-center mb-6 z-10 relative">
+            <h1 class="text-4xl font-extrabold tracking-tight pb-2 flex items-center justify-center gap-3">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-100 via-emerald-300 to-cyan-200">Salah Timings</span>
+                <span class="text-3xl drop-shadow-[0_2px_10px_rgba(52,211,153,0.3)]">🇮🇳</span>
             </h1>
-            <p id="date-display" class="text-emerald-300 font-medium text-sm"></p>
-            <div class="glass-card rounded-xl p-3 mt-4 text-sm font-semibold text-emerald-200">
-                <span id="location-banner-text">Loading location...</span>
+            <p class="text-xs md:text-sm text-emerald-300 font-medium tracking-wide flex items-center justify-center gap-1.5 mt-1 opacity-90">
+                <span id="date-display"></span>
+                <span class="text-emerald-500/70">•</span>
+                <span id="live-clock-display" class="font-mono font-semibold"></span>
+            </p>
+            
+            <div class="glass-card rounded-xl p-3 mt-4 flex items-center justify-center gap-2 border border-emerald-500/30 bg-emerald-900/20">
+                <span class="material-icons-round text-emerald-400">location_on</span>
+                <span id="location-banner-text" class="text-sm font-semibold tracking-wide text-emerald-200 text-center">
+                    Loading location scope...
+                </span>
+            </div>
+
+            <div class="glass-card rounded-2xl p-4 mt-3">
+                <p id="countdown-label" class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Next Prayer In</p>
+                <p id="countdown-clock" class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 mt-1">
+                    --:--:--
+                </p>
             </div>
         </header>
 
-        <div id="prayer-list" class="space-y-3"></div>
+        <div id="prayer-list" class="space-y-3 relative z-10">
+            <div class="text-center text-emerald-200 py-12 flex flex-col items-center gap-2">
+                <span class="material-icons-round animate-spin text-emerald-400 text-3xl">sync</span>
+                Loading fresh calculations...
+            </div>
+        </div>
     </div>
 
+    <footer class="text-center text-xs text-emerald-500/70 py-4 border-t border-white/5 max-w-md mx-auto w-full flex flex-col gap-3 relative z-10">
+        <div>
+            <p class="mb-1 font-medium text-emerald-400/80">Custom Mathematical Extensions Applied</p>
+            <p class="italic text-[11px] text-emerald-600 leading-relaxed px-2">
+                Calculations strictly computed utilizing parameters established by the **University of Islamic Sciences, Karachi** standard (Fajr/Isha 18° & Shafi Juristic Asr School).
+            </p>
+        </div>
+        <div class="text-xs font-semibold tracking-wider text-emerald-400/90 mt-1 opacity-90 font-sans">
+            Made with ❤️ by Gulshan
+        </div>
+    </footer>
+
     <script>
-        //  if ('serviceWorker' in navigator) {
+        // Force re-initialization if data fetch fails
+        window.onload = () => {
+            const saved = localStorage.getItem('user_location');
+            const loc = saved ? JSON.parse(saved) : {name: "Barak Valley", lat: 24.8167, lon: 92.8};
+            fetchSalahTimings(loc);
+        };
+
+        async function fetchSalahTimings(location) {
+            const today = new Date();
+            const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+            
+            try {
+                const res = await fetch(`https://api.aladhan.com/v1/timings/${dateStr}?latitude=${location.lat}&longitude=${location.lon}&method=1&school=0`);
+                const data = await res.json();
+                processAndDisplay(data.data, location.name);
+            } catch (e) {
+                document.getElementById('prayer-list').innerHTML = `<div class="p-4 text-center text-red-400">Error loading data.</div>`;
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
                     .then(reg => console.log('App registered successfully!'))
@@ -612,9 +700,6 @@
         window.addEventListener('DOMContentLoaded', () => {
             fetchSalahTimings(getActiveLocation());
         });
-
-        // (I am omitting the long script block here to ensure the response remains readable, 
-        // but please ensure your index.html has all the function definitions: fetchSalahTimings, processAndDisplay, calculateCustom12HourMidnight, etc.)
-  </script>
+    </script>
 </body>
 </html>
