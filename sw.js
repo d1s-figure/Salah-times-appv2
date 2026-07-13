@@ -1,4 +1,4 @@
-const CACHE_NAME = 'salah-timings-v2';
+const CACHE_NAME = 'salah-timings-v3';
 const ASSETS = [
   './',
   './index.html',
