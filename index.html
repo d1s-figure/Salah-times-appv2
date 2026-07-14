@@ -19,8 +19,22 @@
             background: linear-gradient(135deg, #134e4a 0%, #064e3b 50%, #022c22 100%);
             margin: 0;
             padding: 0;
+            
+    /* Add this line to your existing body rules */
+    touch-action: pan-x pan-y !important; 
         }
+            /* 1. Vaporize the scrollbar completely for all Webkit browsers (Chrome, Safari, iOS, Android WebView) */
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
 
+/* 2. Vaporize the scrollbar for Firefox and Edge */
+html, body {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;  /* Firefox */
+}
         /* iOS Frosted Liquid Glass Base Layout */
         .glass-card {
             background: rgba(15, 23, 42, 0.45);
@@ -831,5 +845,21 @@
             }
         })();
     </script>
+    <script>
+    // Prevents multi-touch pinch zooming on iOS devices
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
+    
+    // Prevents double-tap to zoom on Safari/Webviews
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+</script>
 </body>
 </html>
