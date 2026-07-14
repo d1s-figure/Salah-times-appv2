@@ -21,7 +21,6 @@
             touch-action: pan-x pan-y !important; 
         }
         
-        /* Vaporize scrollbars */
         ::-webkit-scrollbar {
             display: none !important;
             width: 0 !important;
@@ -33,7 +32,6 @@
             scrollbar-width: none !important; 
         }
         
-        /* iOS Frosted Liquid Glass Base Layout */
         .glass-card {
             background: rgba(15, 23, 42, 0.45);
             backdrop-filter: blur(20px) saturate(180%);
@@ -43,7 +41,6 @@
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Global Native-Lock Engine */
         *, *::before, *::after {
             -webkit-user-select: none !important;
             -moz-user-select: none !important;
@@ -52,7 +49,6 @@
             -webkit-tap-highlight-color: transparent !important;
         }
 
-        /* Form Input Exception */
         input, textarea, [contenteditable="true"] {
             -webkit-user-select: text !important;
             -moz-user-select: text !important;
@@ -60,7 +56,6 @@
             user-select: text !important;
         }
         
-        /* High-Contrast Vibrant Active Glow Engine */
         .active-prayer-glow {
             background: rgba(6, 78, 59, 0.6) !important;
             border: 1px solid rgba(34, 211, 238, 0.8) !important;
@@ -153,33 +148,6 @@
     </footer>
 
     <script>
-        window.onload = () => {
-            const saved = localStorage.getItem('user_location');
-            const loc = saved ? JSON.parse(saved) : {name: "Barak Valley : Cachar, Karimganj, and Hailakandi", lat: 24.8167, lon: 92.8};
-            fetchSalahTimings(loc);
-        };
-
-        async function fetchSalahTimings(location) {
-            const today = new Date();
-            const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
-            
-            try {
-                const res = await fetch(`https://api.aladhan.com/v1/timings/${dateStr}?latitude=${location.lat}&longitude=${location.lon}&method=1&school=1`);
-                const data = await res.json();
-                processAndDisplay(data.data, location.name);
-            } catch (e) {
-                document.getElementById('prayer-list').innerHTML = `<div class="p-4 text-center text-red-400">Error loading data.</div>`;
-            }
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('App registered successfully!'))
-                    .catch(err => console.log('Registration failed: ', err));
-            });
-        }
-
         let scheduledPrayers = [];
         let timerInterval = null;
         let searchTimeout = null;
@@ -195,6 +163,42 @@
             lat: 24.8167,
             lon: 92.8000
         };
+
+        window.onload = () => {
+            const saved = localStorage.getItem('user_location');
+            const loc = saved ? JSON.parse(saved) : DEFAULT_LOCATION;
+            fetchSalahTimings(loc);
+        };
+
+        async function fetchSalahTimings(location) {
+            try {
+                document.getElementById('location-banner-text').innerText = location.name;
+                document.getElementById('prayer-list').innerHTML = `
+                    <div class="text-center text-emerald-200 py-12 flex flex-col items-center gap-2">
+                        <span class="material-icons-round animate-spin text-emerald-400 text-3xl">sync</span>
+                        Computing accurate math...
+                    </div>`;
+
+                const today = new Date();
+                const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+                
+                const res = await fetch(`https://api.aladhan.com/v1/timings/${dateStr}?latitude=${location.lat}&longitude=${location.lon}&method=1&school=1`);
+                if (!res.ok) throw new Error("API Fault");
+                
+                const data = await res.json();
+                processAndDisplay(data.data);
+            } catch (e) {
+                document.getElementById('prayer-list').innerHTML = `<div class="p-4 text-center text-red-400">Error loading data. Check connection.</div>`;
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('App registered successfully!'))
+                    .catch(err => console.log('Registration failed: ', err));
+            });
+        }
 
         const searchInput = document.getElementById('city-search-input');
         const searchResults = document.getElementById('search-results');
@@ -252,7 +256,6 @@
                     }
                 } catch (err) {
                     searchSpinner.classList.add('hidden');
-                    console.error("Geocoding Error:", err);
                 }
             }, 500);
         });
@@ -538,10 +541,8 @@
                     let absoluteNextTarget = null;
                     let activeTargetName = "";
                     
+                    // 1. Evaluate ALL prayers exactly as they appear sequentially
                     let sortedPrayers = [...scheduledPrayers].sort((a, b) => a.timeStr.localeCompare(b.timeStr));
-                    const obligatoryOrder = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-                    let sortedObligatory = sortedPrayers.filter(p => obligatoryOrder.includes(p.name));
-
                     let dynamicCurrentActive = null;
 
                     for (let i = 0; i < sortedPrayers.length; i++) {
@@ -553,31 +554,43 @@
                         if (targetDate <= now) dynamicCurrentActive = prayer;
                     }
 
-                    for (let prayer of sortedObligatory) {
+                    // Fallback to the final prayer (Midnight) if evaluating across boundary
+                    if (!dynamicCurrentActive && sortedPrayers.length > 0) {
+                        dynamicCurrentActive = sortedPrayers[sortedPrayers.length - 1];
+                    }
+
+                    // 2. Identify strictly Obligatory prayers for the "Next Prayer In" timer
+                    const obligatoryOrder = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+                    
+                    for (let prayer of sortedPrayers) {
                         const [hrs, mins] = prayer.timeStr.split(':').map(Number);
                         const targetDate = new Date();
                         targetDate.setHours(hrs, mins, 0, 0);
 
-                        if (targetDate > now) {
+                        if (targetDate > now && obligatoryOrder.includes(prayer.name)) {
                             absoluteNextTarget = targetDate;
                             activeTargetName = prayer.name;
                             break;
                         }
                     }
 
-                    if (!dynamicCurrentActive && sortedPrayers.length > 0) {
-                        dynamicCurrentActive = sortedPrayers[sortedPrayers.length - 1];
-                    }
-
+                    // 3. Apply Glow to Main Tabs: EXPLICITLY blocking Sunrise and Midnight from glowing
                     scheduledPrayers.forEach(p => {
                         const el = document.getElementById(`prayer-card-${p.name.toLowerCase()}`);
                         if (el) {
-                            if (dynamicCurrentActive && p.name === dynamicCurrentActive.name) el.classList.add('active-prayer-glow');
-                            else el.classList.remove('active-prayer-glow');
+                            if (dynamicCurrentActive && p.name === dynamicCurrentActive.name) {
+                                if (p.name !== 'Sunrise' && p.name !== 'Midnight') {
+                                    el.classList.add('active-prayer-glow');
+                                } else {
+                                    el.classList.remove('active-prayer-glow');
+                                }
+                            } else {
+                                el.classList.remove('active-prayer-glow');
+                            }
                         }
                     });
 
-                    // Multi-Day Cross-Midnight Window Logic for Tahajjud & Isha Panels
+                    // 4. Multi-Day Cross-Midnight Window Logic for Tahajjud & Isha Panels
                     if (window.tahajjudExactBounds) {
                         const tb = window.tahajjudExactBounds;
                         
@@ -597,6 +610,7 @@
                         if (ampm === 'PM' && midH !== 12) midH += 12;
                         if (ampm === 'AM' && midH === 12) midH = 0;
                         customMidnightDate.setHours(midH, midM, 0, 0);
+                        
                         if (customMidnightDate < iDate) customMidnightDate.setDate(customMidnightDate.getDate() + 1);
 
                         // Shift evaluation window back one day if it's currently early morning before Fajr ends
@@ -648,6 +662,10 @@
                             } else if (now >= customMidnightDate && now < fDate) {
                                 deadlineRow.classList.add('hidden');
                                 endedRow.classList.remove('hidden');
+                                
+                                // STRICT KILL-SWITCH: Extinguish Isha's glow natively
+                                const ishaCard = document.getElementById('prayer-card-isha');
+                                if (ishaCard) ishaCard.classList.remove('active-prayer-glow');
                             } else {
                                 deadlineRow.classList.add('hidden');
                                 endedRow.classList.add('hidden');
@@ -655,12 +673,17 @@
                         }
                     }
 
-                    if (!absoluteNextTarget && sortedObligatory.length > 0) {
-                        const [hrs, mins] = sortedObligatory[0].timeStr.split(':').map(Number);
-                        absoluteNextTarget = new Date();
-                        absoluteNextTarget.setDate(absoluteNextTarget.getDate() + 1);
-                        absoluteNextTarget.setHours(hrs, mins, 0, 0);
-                        activeTargetName = sortedObligatory[0].name;
+                    // 5. Determine the Next Prayer wrap-around
+                    if (!absoluteNextTarget) {
+                        // Ensure we always wrap specifically back to Fajr (not Midnight)
+                        let sortedObligatory = sortedPrayers.filter(p => obligatoryOrder.includes(p.name));
+                        if (sortedObligatory.length > 0) {
+                            const [hrs, mins] = sortedObligatory[0].timeStr.split(':').map(Number);
+                            absoluteNextTarget = new Date();
+                            absoluteNextTarget.setDate(absoluteNextTarget.getDate() + 1);
+                            absoluteNextTarget.setHours(hrs, mins, 0, 0);
+                            activeTargetName = sortedObligatory[0].name;
+                        }
                     }
 
                     if (absoluteNextTarget) {
@@ -688,12 +711,10 @@
             panel.classList.toggle('flex');
         }
 
-        // Prevents multi-touch pinch zooming on iOS devices
         document.addEventListener('gesturestart', function (e) {
             e.preventDefault();
         });
         
-        // Prevents double-tap to zoom on Safari/Webviews
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function (event) {
             const now = (new Date()).getTime();
