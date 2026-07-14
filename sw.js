@@ -1,4 +1,4 @@
-const CACHE_NAME = 'salah-timings-v13';
+const CACHE_NAME = 'salah-timings-v14';
 
 // The "Force-Update" Strategy
 self.addEventListener('install', (e) => {
