@@ -13,10 +13,12 @@
     <meta name="theme-color" content="#134e4a">
     <link rel="apple-touch-icon" href="./app-icon.png">
 
-   <style>
+  <style>
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #134e4a 0%, #064e3b 50%, #022c22 100%);
+            margin: 0;
+            padding: 0;
         }
 
         /* iOS Frosted Liquid Glass Base Layout */
@@ -27,18 +29,18 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        } /* <-- I ADDED THE MISSING CLOSING BRACKET HERE */
-
-        /* 1. Global Native-Lock Engine: Disables text selection across the entire app */
-        *, *::before, *::after {
-            -webkit-user-select: none !important; /* Safari, Chrome, WebView, Opera */
-            -moz-user-select: none !important;    /* Firefox */
-            -ms-user-select: none !important;     /* IE/Edge */
-            user-select: none !important;         /* Standard layout engines */
-            -webkit-tap-highlight-color: transparent !important; /* Vaporizes the default mobile grey tap flash box */
         }
 
-        /* 2. Form Input Exception: Forces search bars and text fields to retain typing and editing capabilities */
+        /* Global Native-Lock Engine: Disables text selection across the entire app layout */
+        *, *::before, *::after {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+
+        /* Form Input Exception: Forces search bars to retain typing and editing capabilities */
         input, 
         textarea, 
         [contenteditable="true"] {
@@ -46,7 +48,7 @@
             -moz-user-select: text !important;
             -ms-user-select: text !important;
             user-select: text !important;
-        } /* <-- I REMOVED THE EXTRA BROKEN BRACKETS THAT WERE HERE */
+        }
         
         /* High-Contrast Vibrant Active Glow Engine */
         .active-prayer-glow {
@@ -62,14 +64,77 @@
             50% { border-color: rgba(52, 211, 153, 0.9); box-shadow: 0 0 30px rgba(52, 211, 153, 0.5); }
         }
 
-        /* Dropdown Scrollbar Hide */
         #search-results::-webkit-scrollbar {
             display: none;
+        }
+
+        /* --- EXCLUSIVE APP SPLASH SCREEN SYSTEM --- */
+        #app-splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #020617; /* Deep slate background matching the main web layout */
+            display: none; /* Hidden by default for web visitors */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999; /* Forces splash overlay over all layout containers */
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .splash-logo-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Animates the silhouette icon with a scale up and continuous breathing pulse */
+        .splash-icon {
+            width: 110px;
+            height: 110px;
+            /* Turns the raw black silhouette into a premium luminous mint green color (#34D399) */
+            filter: invert(74%) sepia(35%) saturate(718%) hue-rotate(106deg) brightness(97%) contrast(89%);
+            animation: introScale 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, logoPulse 2.5s infinite ease-in-out 0.8s;
+        }
+
+        /* Concentric ring element breathing behind the primary asset */
+        .splash-pulse-ring {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 2px solid #10B981;
+            border-radius: 50%;
+            opacity: 0;
+            animation: ringExpand 2.5s infinite ease-out 0.8s;
+        }
+
+        /* Keyframe Engines */
+        @keyframes introScale {
+            0% { transform: scale(0.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(52, 211, 153, 0.6)) invert(74%) sepia(35%) saturate(718%) hue-rotate(106deg) brightness(97%) contrast(89%); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 30px rgba(16, 185, 129, 0.9)) invert(65%) sepia(60%) saturate(600%) hue-rotate(120deg) brightness(100%) contrast(100%); }
+        }
+
+        @keyframes ringExpand {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.6); opacity: 0; }
         }
     </style>
 </head>
 <body class="text-white min-h-screen flex flex-col justify-between p-4">
-
+<div id="app-splash-screen">
+        <div class="splash-logo-container">
+            <div class="splash-pulse-ring"></div>
+            <img src="mosque.png" alt="App Logo" class="splash-icon" />
+        </div>
+    </div>
     <div class="max-w-md mx-auto w-full pt-4 pb-12">
         
         <div class="relative mb-4 z-50">
@@ -743,6 +808,28 @@
             panel.classList.toggle('hidden');
             panel.classList.toggle('flex');
         }
+    </script>
+    <script>
+        (function() {
+            const isApp = navigator.userAgent.indexOf('median') > -1 || 
+                          navigator.userAgent.indexOf('gonative') > -1 ||
+                          window.webkit?.messageHandlers?.gonative ||
+                          navigator.userAgent.toLowerCase().includes('apk');
+
+            if (isApp) {
+                const splash = document.getElementById('app-splash-screen');
+                // Instantly unhide the layout container so it catches the view right after Median clears
+                splash.style.display = 'flex';
+
+                // Execute the smooth native crossfade sequence
+                setTimeout(() => {
+                    splash.style.opacity = '0';
+                    setTimeout(() => {
+                        splash.style.display = 'none';
+                    }, 600);
+                }, 2000); // 2 seconds total duration
+            }
+        })();
     </script>
 </body>
 </html>
