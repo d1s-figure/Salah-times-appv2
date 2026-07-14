@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Salah Timings</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,6 +26,11 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-user-select: none; /* Safari/Chrome */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* IE/Edge */
+    user-select: none;         /* Standard */
+    -webkit-tap-highlight-color: transparent;
         }
         
         /* High-Contrast Vibrant Active Glow Engine */
