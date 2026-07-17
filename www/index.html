@@ -684,11 +684,8 @@ function showIosInstructions() {
         
 
         async function fetchSalahTimings(location) {
-    // Safety check for the UI element
     const banner = document.getElementById('location-banner-text');
-    if (banner) {
-        banner.innerText = location.name;
-    }
+    if (banner) banner.innerText = location.name;
 
     try {
         const today = new Date();
@@ -703,21 +700,19 @@ function showIosInstructions() {
         const targetUrl = `https://api.aladhan.com/v1/timings/${todayStr}?latitude=${location.lat}&longitude=${location.lon}&method=${activeMethod}&school=${savedSettings.asrMethod}`;
         
         const response = await fetch(targetUrl);
-        
-        if (!response.ok) throw new Error("API Fault");
-        
         const payload = await response.json();
+        
         if (payload.code === 200) {
             processAndDisplay(payload.data, payload.data.meta);
+        } else {
+            console.error("API returned code:", payload.code);
         }
     } catch (error) {
-        console.error("Fetch Error:", error);
-        const prayerList = document.getElementById('prayer-list');
-        if (prayerList) {
-            prayerList.innerHTML = `<div class="p-4 text-center text-red-400">Error loading data. Check connection.</div>`;
-        }
+        console.error("Fetch failed:", error);
+        // Do NOT overwrite the UI here; let the user see the error in console
     }
 }
+
 
         function processAndDisplay(todayData, metaData) {
             window.activeTimezone = metaData.timezone; 
