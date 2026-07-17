@@ -700,7 +700,7 @@ function renderOfflineBanner() {
             if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) searchResults.classList.add('hidden');
         });
 
-        gpsBtn.addEventListener('click', () => {
+        gpsBtn.addEventListener('click', async () => {
     gpsIcon.innerText = 'sync';
     gpsIcon.classList.add('animate-spin');
     
