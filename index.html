@@ -146,10 +146,7 @@
         <img src="mosque.png" class="splash-icon" />
     </div>
 
-    <!-- Premium Stylized Quote -->
-    <div class="absolute bottom-16 left-0 right-0 px-10 text-center z-[100000]">
-        <p id="quran-text" class="splash-quote-text"></p>
-    </div>
+    
 </div>
     <div class="status-bar-blur"></div>
     
@@ -279,7 +276,7 @@
             </button>
         </div>
         
-        <div class="p-4 flex-1 overflow-y-auto space-y-4">
+        <div class="p-4 flex-1 overflow-y-auto space-y-4 pb-24 h-[100vh]">
             
             <div class="glass-card p-4 rounded-xl border border-white/5 bg-black/20">
                 <h3 class="text-xs uppercase tracking-widest font-semibold text-teal-400 mb-4 flex items-center gap-2">
@@ -324,47 +321,9 @@
                 </div>
             </div>
 
-            <div class="glass-card p-4 rounded-xl border border-white/5 bg-black/20">
-                <h3 class="text-xs uppercase tracking-widest font-semibold text-teal-400 mb-4 flex items-center gap-2">
-                    <span class="material-icons-round text-base">notifications_active</span>
-                    Prayer Alerts
-                </h3>
-                
-                <div class="space-y-3 mt-3" id="notif-style-options">
-                    <button data-val="floating" class="notif-opt w-full flex justify-between items-center p-3 rounded-lg border border-teal-500/50 bg-teal-500/20 text-teal-100 transition-all active:scale-[0.98]">
-                        <span class="text-sm font-medium">Floating (Popup)</span>
-                        <span class="material-icons-round text-base check-icon text-teal-300">check_circle</span>
-                    </button>
-                    
-                    <button data-val="silent" class="notif-opt w-full flex justify-between items-center p-3 rounded-lg border border-white/5 bg-black/20 text-gray-400 transition-all active:scale-[0.98]">
-                        <span class="text-sm font-medium">Deliver Silently</span>
-                        <span class="material-icons-round text-base check-icon hidden text-teal-300">check_circle</span>
-                    </button>
-                    
-                    <button data-val="off" class="notif-opt w-full flex justify-between items-center p-3 rounded-lg border border-white/5 bg-black/20 text-gray-400 transition-all active:scale-[0.98]">
-                        <span class="text-sm font-medium">Off</span>
-                        <span class="material-icons-round text-base check-icon hidden text-teal-300">check_circle</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="glass-card p-4 rounded-xl border border-white/5 bg-black/20 mb-6">
-                <h3 class="text-xs uppercase tracking-widest font-semibold text-teal-400 mb-4 flex items-center gap-2">
-                    <span class="material-icons-round text-base">vibration</span>
-                    Haptics
-                </h3>
-                
-                <label class="flex items-center justify-between cursor-pointer">
-                    <span class="text-sm font-medium text-gray-200">Vibrate on Salah Time</span>
-                    <div class="relative inline-flex items-center">
-                        <input type="checkbox" id="vibrate-toggle" class="sr-only peer">
-                        <div class="w-11 h-6 bg-teal-950/80 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border border-teal-500/30 shadow-inner"></div>
-                    </div>
-                </label>
-            </div>
             
-        </div>
-    </div>
+
+            
 
     <script>
         // --- 1. GLOBAL STATE INITIALIZATION (SAFE PARSING) ---
@@ -741,39 +700,47 @@ function renderOfflineBanner() {
             if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) searchResults.classList.add('hidden');
         });
 
-        gpsBtn.addEventListener('click', async () => {
+        gpsBtn.addEventListener('click', () => {
     gpsIcon.innerText = 'sync';
     gpsIcon.classList.add('animate-spin');
-    const Geolocation = window.Capacitor.Plugins.Geolocation;
     
-    try {
-        // --- NATIVE CAPACITOR WORKAROUND STARTS HERE ---
-        let coordinates = await new Promise(async (resolve, reject) => {
-            let watchId = null;
-
-            // 1. Set a manual 15-second timeout fallback
-            const timeoutTimer = setTimeout(() => {
-                if (watchId != null) Geolocation.clearWatch({ id: watchId });
-                reject(new Error("Timeout expired"));
-            }, 15000);
-
-            // 2. Force wake the physical GPS hardware
-            watchId = await Geolocation.watchPosition(
-                { enableHighAccuracy: false, maximumAge: 10000 },
-                (position, err) => {
-                    if (position) {
-                        clearTimeout(timeoutTimer);
-                        Geolocation.clearWatch({ id: watchId });
-                        resolve(position);
-                    }
-                    if (err) {
-                        clearTimeout(timeoutTimer);
-                        Geolocation.clearWatch({ id: watchId });
-                        reject(err);
-                    }
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`);
+                    const data = await response.json();
+                    
+                    const placeName = data.address.city || data.address.town || data.address.county || data.address.state_district || "Current Location";
+                    const cCode = data.address && data.address.country_code ? data.address.country_code.toLowerCase() : 'sa';
+                    
+                    const locationData = { name: placeName, lat: lat, lon: lon, country: cCode };
+                    localStorage.setItem('user_location', JSON.stringify(locationData));
+                    fetchSalahTimings(locationData);
+                    closeLocationModalLogic();
+                } catch (error) {
+                    showToast(`API Error: ${error.message}`);
+                } finally {
+                    gpsIcon.classList.remove('animate-spin'); 
+                    gpsIcon.innerText = 'my_location';
                 }
-            );
-        });
+            },
+            (error) => {
+                showToast("Please allow location access in your browser.");
+                gpsIcon.classList.remove('animate-spin'); 
+                gpsIcon.innerText = 'my_location';
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else {
+        showToast("Your browser does not support GPS.");
+        gpsIcon.classList.remove('animate-spin'); 
+        gpsIcon.innerText = 'my_location';
+    }
+});
         // --- NATIVE CAPACITOR WORKAROUND ENDS HERE ---
 
         const lat = coordinates.coords.latitude;
@@ -1175,23 +1142,6 @@ function renderOfflineBanner() {
             timerInterval = setInterval(updateClock, 1000);
         }
     </script>
-    <script>
-    window.onload = function() {
-        const quotes = [
-            "\"Establish prayer, for prayer restrains from shameful and evil deeds.\" — 29:45",
-            "\"Indeed, prayer has been decreed upon the believers a decree of specified times.\" — 4:103",
-            "\"And seek help through patience and prayer, and indeed, it is difficult except for the humbly submissive.\" — 2:45",
-            "\"Guard strictly your prayers, especially the Middle Prayer.\" — 2:238",
-            "\"Successful indeed are the believers, those who offer their prayers with all solemnity and full submissiveness.\" — 23:1-2"
-        ];
-        
-        const quoteEl = document.getElementById('quran-text');
-        if (quoteEl) {
-            quoteEl.innerText = quotes[Math.floor(Math.random() * quotes.length)];
-            // Smooth fade-in
-            setTimeout(() => { quoteEl.style.opacity = "1"; }, 400);
-        }
-    };
-</script>
+    
 </body>
 </html>
