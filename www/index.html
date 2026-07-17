@@ -202,7 +202,17 @@
             </p>
         </div>
         
-        <button onclick="toggleCredits()" class="text-[10px] uppercase tracking-widest text-emerald-400/60 hover:text-emerald-300 transition-colors mx-auto flex items-center gap-1 mt-2">
+        <div class="flex justify-center gap-4 flex-wrap px-2 mt-2">
+            <button onclick="toggleCredits()" class="text-[10px] uppercase tracking-widest text-emerald-400/60 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                <span class="material-icons-round text-[12px]">info</span> App Acknowledgements
+            </button>
+            <button onclick="toggleAppModal()" class="text-[10px] uppercase tracking-widest text-emerald-400/60 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                <span class="material-icons-round text-[12px]">file_download</span> Get the App
+            </button>
+            <a href="https://www.freeprivacypolicy.com/live/a261554f-6c3b-41f3-9d75-80e3afc038db" target="_blank" class="text-[10px] uppercase tracking-widest text-emerald-400/60 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                <span class="material-icons-round text-[12px]">lock</span> Privacy Policy
+            </a>
+        </div>
             <span class="material-icons-round text-[12px]">info</span> App Acknowledgements
         </button>
 
@@ -1031,7 +1041,95 @@ function renderOfflineBanner() {
             updateClock();
             timerInterval = setInterval(updateClock, 1000);
         }
+      
+        function toggleAppModal() {
+            const modal = document.getElementById('app-modal');
+            const content = document.getElementById('app-modal-content');
+            const backdrop = document.getElementById('app-modal-backdrop');
+            
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                // Force a browser reflow so the transition triggers
+                void modal.offsetWidth;
+                backdrop.classList.remove('opacity-0');
+                backdrop.classList.add('opacity-100');
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            } else {
+                backdrop.classList.remove('opacity-100');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+                // Wait for the transition to finish before hiding
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function toggleIosInstructions() {
+            const container = document.getElementById('ios-instructions');
+            if (container.classList.contains('grid-rows-[0fr]')) {
+                container.classList.remove('grid-rows-[0fr]');
+                container.classList.add('grid-rows-[1fr]');
+            } else {
+                container.classList.remove('grid-rows-[1fr]');
+                container.classList.add('grid-rows-[0fr]');
+            }
+        }
     </script>
+    
+    <div id="app-modal" class="fixed inset-0 z-[999999] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="app-modal-backdrop" onclick="toggleAppModal()"></div>
+        <div class="glass-card w-full max-w-sm rounded-3xl p-6 relative overflow-hidden transform transition-all scale-95 opacity-0 duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] border border-emerald-500/20" id="app-modal-content">
+            <button onclick="toggleAppModal()" class="absolute top-4 right-4 text-emerald-400/70 hover:text-white transition-colors active:scale-95"><span class="material-icons-round">close</span></button>
+            <h2 class="text-xl font-bold text-emerald-100 mb-6 text-center">Get the App</h2>
+            
+            <!-- iOS Section -->
+            <div class="cursor-pointer group" onclick="toggleIosInstructions()">
+                <div class="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all active:scale-[0.98]">
+                    <span class="material-icons-round text-emerald-400 text-3xl">apple</span>
+                    <div>
+                        <p class="font-bold text-emerald-100 group-hover:text-white transition-colors">iOS</p>
+                        <p class="text-[10px] text-emerald-400/70">Progressive Web App</p>
+                    </div>
+                </div>
+                <div id="ios-instructions" class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out px-3">
+                    <div class="overflow-hidden">
+                        <div class="space-y-2 text-[11px] text-emerald-100/80 bg-black/20 p-4 rounded-xl border border-emerald-500/10 mt-1 mb-2 shadow-inner">
+                            <p>1. Open this website in Safari.</p>
+                            <p>2. Tap the Share button.</p>
+                            <p>3. Scroll down.</p>
+                            <p>4. Tap Add to Home Screen.</p>
+                            <p>5. Tap Add.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-3 my-3 opacity-50 px-2">
+                <div class="h-px bg-emerald-500/30 flex-1"></div>
+                <span class="text-[10px] uppercase tracking-widest text-emerald-200 font-bold">OR</span>
+                <div class="h-px bg-emerald-500/30 flex-1"></div>
+            </div>
+
+            <!-- Android Section -->
+            <a href="https://github.com/d1s-figure/Salah-times-appv2/releases/download/v1.0.0/app-release.apk" class="block p-3 rounded-2xl hover:bg-white/5 transition-all active:scale-[0.98] group">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="material-icons-round text-emerald-400 text-3xl">android</span>
+                    <div>
+                        <p class="font-bold text-emerald-100 group-hover:text-white transition-colors">Android</p>
+                        <p class="text-[10px] text-emerald-400/70">Native App</p>
+                    </div>
+                </div>
+                <div class="bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/10 shadow-inner">
+                    <p class="text-[10px] font-bold text-emerald-300 mb-1.5 tracking-wide">Additional Features</p>
+                    <p class="text-[10px] text-emerald-400/70 leading-relaxed">• Notifications<br>• Vibration on Salah Time</p>
+                </div>
+            </a>
+        </div>
+    </div>
     
 </body>
 </html>
