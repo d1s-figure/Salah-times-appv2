@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="light only">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Offline - Salah Timings</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #134e4a 0%, #064e3b 50%, #022c22 100%);
+            margin: 0;
+            padding: 0;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body class="text-white min-h-screen flex flex-col justify-center items-center p-4">
+
+    <div class="glass-card rounded-3xl p-8 max-w-xs w-full text-center flex flex-col items-center gap-3">
+        <span class="material-icons-round text-6xl text-emerald-400/50 mb-2">wifi_off</span>
+        <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-100 to-emerald-200">Uh-Oh!</h1>
+        <p class="text-sm text-emerald-100/70 leading-relaxed px-2">
+            You seem to be offline. Please connect to the internet to fetch prayer timings.
+        </p>
+        
+        <button onclick="retryConnection()" class="mt-4 w-full py-3 glass-card rounded-xl border border-emerald-500/30 text-emerald-300 font-semibold tracking-wide hover:bg-emerald-900/50 transition-colors active:scale-95 flex items-center justify-center gap-2">
+            <span class="material-icons-round text-sm" id="retry-icon">refresh</span>
+            Retry Connection
+        </button>
+    </div>
+
+    <div id="custom-toast" class="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-[999999] transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
+        <div class="glass-card rounded-full px-4 py-2 flex items-center gap-2 border border-red-500/30 bg-red-950/90 shadow-2xl">
+            <span class="material-icons-round text-red-400 text-sm">error_outline</span>
+            <span id="toast-msg" class="text-xs font-medium tracking-wide text-red-100 whitespace-nowrap"></span>
+        </div>
+    </div>
+
+    <script>
+        // FIXED: The Toast Animation Logic
+        function showToast(message) {
+            const toast = document.getElementById('custom-toast');
+            document.getElementById('toast-msg').innerText = message;
+            
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 3000);
+        }
+
+        // FIXED: Real Hardware Network Checking Logic
+        function retryConnection() {
+            const icon = document.getElementById('retry-icon');
+            icon.classList.add('animate-spin'); // Spin the icon while thinking
+
+            setTimeout(() => { // Tiny delay for smooth UI feel
+                if (window.Capacitor && window.Capacitor.Plugins.Network) {
+                    window.Capacitor.Plugins.Network.getStatus().then(status => {
+                        icon.classList.remove('animate-spin');
+                        if (status.connected) {
+                            window.location.href = 'index.html'; // Go back to app
+                        } else {
+                            showToast("Still no connection. Check your Wi-Fi.");
+                        }
+                    });
+                } else {
+                    // Fallback for browser testing
+                    icon.classList.remove('animate-spin');
+                    if (navigator.onLine) {
+                        window.location.href = 'index.html';
+                    } else {
+                        showToast("Still no connection. Check your Wi-Fi.");
+                    }
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>
