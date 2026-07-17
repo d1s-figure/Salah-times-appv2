@@ -222,6 +222,14 @@
     <div class="text-xs font-semibold tracking-wider text-emerald-400/90 mt-2 opacity-90 font-sans">
         Made with ❤️ by Gulshan
     </div>
+    <div id="features-panel" class="hidden flex-col gap-2 glass-card p-4 rounded-xl mx-4 text-left border border-white/10 mt-1">
+    <p class="text-sm font-bold text-emerald-300 mb-1">Native App Features</p>
+    <ul class="text-[11px] text-emerald-100 space-y-1.5 list-disc ml-4">
+        <li>Real-time local notifications</li>
+        <li>Haptic vibration feedback</li>
+        <li>Smooth native UI performance</li>
+    </ul>
+</div>
 </footer>
 
     <div id="custom-toast" class="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-[999999] transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
@@ -676,8 +684,12 @@ function showIosInstructions() {
         
 
         async function fetchSalahTimings(location) {
-            try {
-                document.getElementById('location-banner-text').innerText = location.name;
+    try {
+        // --- START OF FIX ---
+        const banner = document.getElementById('location-banner-text');
+        if (banner) {
+            banner.innerText = location.name;
+        }
                 const today = new Date();
                 const todayStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
                 
