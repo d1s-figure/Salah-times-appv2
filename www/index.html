@@ -491,92 +491,7 @@
             });
         });
 
-        // --- 5. NOTIFICATION ENGINE (TIMEZONE AWARE) ---
-        async function schedulePrayerAlerts() {
-            if (!window.Capacitor || !window.Capacitor.Plugins.LocalNotifications) return;
-            const { LocalNotifications } = window.Capacitor.Plugins;
-
-            try {
-                const pending = await LocalNotifications.getPending();
-                if (pending.notifications.length > 0) await LocalNotifications.cancel({ notifications: pending.notifications });
-                if (savedSettings.notifStyle === 'off') return;
-
-                let perm = await LocalNotifications.checkPermissions();
-                if (perm.display !== 'granted') perm = await LocalNotifications.requestPermissions();
-                if (perm.display !== 'granted') return;
-
-                await LocalNotifications.createChannel({ id: 'prayer_floating_v4', name: 'High Priority (Floating)', importance: 5, vibration: savedSettings.vibrate, sound: "default" });
-                await LocalNotifications.createChannel({ id: 'prayer_silent_v2', name: 'Silent Alerts', importance: 2, vibration: false });
-
-                const channelId = savedSettings.notifStyle === 'floating' ? 'prayer_floating' : 'prayer_silent';
-                const obligatoryOrder = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-                let upcomingAlerts = [];
-                let notifIdCounter = 1;
-
-                const tz = window.activeTimezone || 'Asia/Kolkata';
-                const nowStr = new Date().toLocaleString('en-US', {timeZone: tz});
-                const localNow = new Date(nowStr);
-                const realNowMs = Date.now();
-
-                scheduledPrayers.forEach((prayer, index) => {
-                    if (!obligatoryOrder.includes(prayer.name)) return;
-                    const [hrs, mins] = prayer.timeStr.split(':').map(Number);
-                    
-                    const targetDateLocal = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), hrs, mins, 0);
-                    const diffMs = targetDateLocal.getTime() - localNow.getTime();
-                    
-                    const trueTargetDate = new Date(realNowMs + diffMs);
-
-                    if (diffMs > 0) {
-                        let endTimeStr = "Midnight";
-                        if (index + 1 < scheduledPrayers.length) endTimeStr = scheduledPrayers[index + 1].timeStr;
-                        upcomingAlerts.push({
-                            id: notifIdCounter++,
-                            title: `Time for ${prayer.name} Salah`,
-                            body: `It ends at ${convertTo12Hour(`${endTimeStr}:00`)}.`,
-                            schedule: { at: trueTargetDate },
-                            channelId: 'prayer_floating_v4',
-                            smallIcon: "ic_stat_mosque"
-                        });
-                    }
-                });
-
-                if (upcomingAlerts.length > 0) await LocalNotifications.schedule({ notifications: upcomingAlerts });
-            } catch (e) { console.log("Notification scheduling failed", e); }
-        }
-
-        if (vibrateToggle) {
-            vibrateToggle.checked = savedSettings.vibrate;
-            vibrateToggle.addEventListener('change', (e) => {
-                savedSettings.vibrate = e.target.checked;
-                localStorage.setItem('app_settings', JSON.stringify(savedSettings));
-                if (e.target.checked && window.Capacitor && window.Capacitor.Plugins.Haptics) window.Capacitor.Plugins.Haptics.vibrate();
-                schedulePrayerAlerts(); 
-            });
-        }
-
-        function updateNotifUI(selectedValue) {
-            notifOptions.forEach(btn => {
-                const icon = btn.querySelector('.check-icon');
-                if (btn.getAttribute('data-val') === selectedValue) {
-                    btn.className = "notif-opt w-full flex justify-between items-center p-3 rounded-lg border border-teal-500/50 bg-teal-500/20 text-teal-100 transition-all active:scale-[0.98]";
-                    if (icon) icon.classList.remove('hidden');
-                } else {
-                    btn.className = "notif-opt w-full flex justify-between items-center p-3 rounded-lg border border-white/5 bg-black/20 text-gray-400 transition-all active:scale-[0.98]";
-                    if (icon) icon.classList.add('hidden');
-                }
-            });
-        }
-        updateNotifUI(savedSettings.notifStyle);
-        notifOptions.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const val = e.currentTarget.getAttribute('data-val');
-                savedSettings.notifStyle = val;
-                localStorage.setItem('app_settings', JSON.stringify(savedSettings));
-                updateNotifUI(val);
-                schedulePrayerAlerts(); 
-            });
-        });
+        
 
         function showToast(message) {
             const toast = document.getElementById('custom-toast');
@@ -741,29 +656,7 @@ function renderOfflineBanner() {
         gpsIcon.innerText = 'my_location';
     }
 });
-        // --- NATIVE CAPACITOR WORKAROUND ENDS HERE ---
-
-        const lat = coordinates.coords.latitude;
-        const lon = coordinates.coords.longitude;
         
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`);
-        const data = await response.json();
-        
-        const placeName = data.address.city || data.address.town || data.address.county || data.address.state_district || "Current Location";
-        const cCode = data.address && data.address.country_code ? data.address.country_code.toLowerCase() : 'sa';
-        
-        const locationData = { name: placeName, lat: lat, lon: lon, country: cCode };
-        localStorage.setItem('user_location', JSON.stringify(locationData));
-        fetchSalahTimings(locationData);
-        closeLocationModalLogic();
-        
-    } catch (error) { 
-        showToast(`GPS Error: ${error.message}`); 
-    } finally { 
-        gpsIcon.classList.remove('animate-spin'); 
-        gpsIcon.innerText = 'my_location'; 
-    }
-});
 
         async function fetchSalahTimings(location) {
             try {
@@ -966,13 +859,10 @@ function renderOfflineBanner() {
                 listContainer.appendChild(subTabsContainer);
             }
 
-            const verseContainer = document.createElement('div');
-            verseContainer.className = "mt-4 px-3 py-1.5 text-center leading-relaxed opacity-80 border-l border-r border-teal-500/20 rounded-xl mx-2 bg-teal-950/5";
-            verseContainer.innerHTML = `<p class="text-xs font-medium text-emerald-200/90 tracking-wide italic leading-relaxed" style="font-family: 'Playfair Display', serif;">"And during a part of the night, pray Tahajjud beyond what is incumbent on you..."</p><p class="text-[10px] font-bold uppercase tracking-widest text-emerald-400/60 mt-1">(Al-Quran-17:79)</p>`;
-            listContainer.appendChild(verseContainer);
+            
 
             startCountdownLoop();
-            schedulePrayerAlerts();
+            
         }
         
         function extract24HFromMidnight(timeStr) {
