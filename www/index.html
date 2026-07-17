@@ -684,44 +684,40 @@ function showIosInstructions() {
         
 
         async function fetchSalahTimings(location) {
+    // Safety check for the UI element
+    const banner = document.getElementById('location-banner-text');
+    if (banner) {
+        banner.innerText = location.name;
+    }
+
     try {
-        // --- START OF FIX ---
-        const banner = document.getElementById('location-banner-text');
-        if (banner) {
-            banner.innerText = location.name;
-        }
-                const today = new Date();
-                const todayStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
-                
-                const country = location.country || 'in';
-                let activeMethod = savedSettings.calcMethod;
-                if (activeMethod === 'auto') activeMethod = countryToMethod[country] || 3; 
+        const today = new Date();
+        const todayStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+        
+        const country = location.country || 'in';
+        let activeMethod = savedSettings.calcMethod;
+        if (activeMethod === 'auto') activeMethod = countryToMethod[country] || 3; 
 
-                window.activeMethodParams = { methodId: activeMethod, asrSchool: savedSettings.asrMethod };
+        window.activeMethodParams = { methodId: activeMethod, asrSchool: savedSettings.asrMethod };
 
-                const targetUrl = `https://api.aladhan.com/v1/timings/${todayStr}?latitude=${location.lat}&longitude=${location.lon}&method=${activeMethod}&school=${savedSettings.asrMethod}`;
-                
-                // FORCE A NETWORK CALL
-                const response = await fetch(targetUrl);
-                
-                if (!response.ok) {
-                    alert(`API BLOCKED: The server responded with Error ${response.status} - ${response.statusText}`);
-                    throw new Error("API Fault");
-                }
-                
-                const payload = await response.json();
-                if (payload.code === 200) {
-                    processAndDisplay(payload.data, payload.data.meta);
-                } else {
-                    alert(`DATA CORRUPTED: API returned code ${payload.code}`);
-                }
-            } catch (error) {
-                // THIS POP-UP WILL TELL US EXACTLY WHY IT IS FAILING
-                alert(`FATAL CRASH INFO:\n\nError: ${error.message}\n\nLat: ${location.lat}\nLon: ${location.lon}\n\nIf it says "Failed to fetch", Android is blocking the internet connection.`);
-                
-                document.getElementById('prayer-list').innerHTML = `<div class="p-4 text-center text-red-400">Error loading data. Check connection.</div>`;
-            }
+        const targetUrl = `https://api.aladhan.com/v1/timings/${todayStr}?latitude=${location.lat}&longitude=${location.lon}&method=${activeMethod}&school=${savedSettings.asrMethod}`;
+        
+        const response = await fetch(targetUrl);
+        
+        if (!response.ok) throw new Error("API Fault");
+        
+        const payload = await response.json();
+        if (payload.code === 200) {
+            processAndDisplay(payload.data, payload.data.meta);
         }
+    } catch (error) {
+        console.error("Fetch Error:", error);
+        const prayerList = document.getElementById('prayer-list');
+        if (prayerList) {
+            prayerList.innerHTML = `<div class="p-4 text-center text-red-400">Error loading data. Check connection.</div>`;
+        }
+    }
+}
 
         function processAndDisplay(todayData, metaData) {
             window.activeTimezone = metaData.timezone; 
